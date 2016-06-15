@@ -6,38 +6,50 @@ using refactor_me.Models;
 
 namespace refactor_me.Services
 {
-    public class ProductService
+    public class ProductService : IProductService
     {
         public Products GetAll()
         {
-            throw new  NotImplementedException();
+            return new Products();
         }
 
         public Products SearchByName(string name)
         {
-            throw new NotImplementedException();
+            return new Products(name);
         }
 
         public Product GetProduct(Guid id)
         {
-            throw new NotImplementedException();
+            var product = new Product(id);
+            if (product.IsNew)
+                return null;
+            return product;
         }
 
         public Product Create(Product product)
         {
-            throw new NotImplementedException();
+            product.Save();
+            return product;
         }
 
         public Product Update(Guid id, Product product)
         {
-            throw new NotImplementedException();
+            var orig = new Product(id)
+            {
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                DeliveryPrice = product.DeliveryPrice
+            };
+            if (!orig.IsNew)
+                orig.Save();
+            throw new ArgumentException("No product was found by id", nameof(id));
         }
 
         public void Delete(Guid id)
         {
-            throw new NotImplementedException();
+            var product = new Product(id);
+            product.Delete();
         }
-
-
     }
 }

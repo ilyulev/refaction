@@ -1,34 +1,49 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
+using Microsoft.Practices.Unity;
 using System.Web.Http;
 using refactor_me.Models;
+using refactor_me.Services;
 
 namespace refactor_me.Controllers
 {
     [RoutePrefix("products")]
     public class ProductsController : ApiController
     {
+        [Dependency]
+        public IProductService ProductService { get; set; }
+
+
         [Route]
         [HttpGet]
         public Products GetAll()
         {
-            return new Products();
+            return ProductService.GetAll();
         }
 
         [Route]
         [HttpGet]
         public Products SearchByName(string name)
         {
-            return new Products(name);
+            if (string.IsNullOrWhiteSpace(name))
+                //unfortunately, there's no 422 response code
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = "Missed expected parameter 'name'"
+                });
+
+            return ProductService.SearchByName(name);
         }
 
         [Route("{id}")]
         [HttpGet]
         public Product GetProduct(Guid id)
         {
-            var product = new Product(id);
-            if (product.IsNew)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+            var product = ProductService.GetProduct(id);
+            if (product == null)
+                throw new HttpResponseException(HttpStatusCode.NoContent);
 
             return product;
         }
@@ -37,31 +52,92 @@ namespace refactor_me.Controllers
         [HttpPost]
         public void Create(Product product)
         {
-            product.Save();
+            try
+            {
+                ProductService.Create(product);
+            }
+            catch (ArgumentException e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"Incorrect parameter {e.ParamName}: {e.Message}"
+                });
+            }
+            catch (Exception e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"Cannot create the product: {e.Message}"
+                });
+            }
         }
 
         [Route("{id}")]
         [HttpPut]
         public void Update(Guid id, Product product)
         {
-            var orig = new Product(id)
-            {
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                DeliveryPrice = product.DeliveryPrice
-            };
+            if (id == Guid.Empty)
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = "Missed expected parameter 'id'"
+                });
 
-            if (!orig.IsNew)
-                orig.Save();
+            try
+            {
+                ProductService.Update(id, product);
+            }
+            catch (ArgumentException e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"Incorrect parameter {e.ParamName}: {e.Message}"
+                });
+            }
+            catch (Exception e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"Cannot update the product: {e.Message}"
+                });
+            }
         }
 
         [Route("{id}")]
         [HttpDelete]
         public void Delete(Guid id)
         {
-            var product = new Product(id);
-            product.Delete();
+            if (id == Guid.Empty)
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = "Missed expected parameter 'id'"
+                });
+
+            try
+            {
+                ProductService.Delete(id);
+            }
+            catch (ArgumentException e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"No product available for id= '{id}'"
+                });
+            }
+            catch (Exception e)
+            {
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ReasonPhrase = $"Cannot delete the product: {e.Message}"
+                });
+            }
         }
     }
 }
