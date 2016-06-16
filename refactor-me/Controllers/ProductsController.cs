@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using Microsoft.Practices.Unity;
@@ -111,12 +112,6 @@ namespace refactor_me.Controllers
         [HttpDelete]
         public void Delete(Guid id)
         {
-            if (id == Guid.Empty)
-                throw new HttpResponseException(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ReasonPhrase = "Missed expected parameter 'id'"
-                });
 
             try
             {

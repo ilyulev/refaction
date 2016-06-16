@@ -4,12 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace refactor_me.Models
 {
-    [Table("ProductOption")]
-    public partial class ProductOption
+    [Table("Product")]
+    public partial class Product
     {
         public Guid Id { get; set; }
-
-        public Guid ProductId { get; set; }
 
         [Required]
         [StringLength(100)]
@@ -17,5 +15,9 @@ namespace refactor_me.Models
 
         [StringLength(500)]
         public string Description { get; set; }
+
+        public decimal Price { get; set; }
+
+        public decimal DeliveryPrice { get; set; }
     }
 }
